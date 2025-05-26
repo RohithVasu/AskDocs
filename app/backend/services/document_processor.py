@@ -14,7 +14,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from app.backend.core.settings import settings
+from app.core.settings import settings
 
 class DocumentProcessor:
     def __init__(self):

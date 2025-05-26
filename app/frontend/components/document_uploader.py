@@ -1,38 +1,45 @@
 import streamlit as st
 from pathlib import Path
-from typing import List
-
-from services.api import APIService
+from app.frontend.services.upload import upload_document
+from loguru import logger
 
 class DocumentUploader:
     def __init__(self):
-        self.api = APIService()
+        pass
 
     def render(self) -> None:
         """Render the document upload component."""
-        st.header("Upload Documents")
+        st.sidebar.subheader("Upload Document")
         
-        uploaded_files = st.file_uploader(
-            "Choose files",
-            accept_multiple_files=True,
-            type=["docx", "xlsx", "csv", "pdf"]
+        # Display file upload with a smaller width
+        uploaded_file = st.sidebar.file_uploader(
+            "Choose a file",
+            accept_multiple_files=False,
+            type=["docx", "pdf", "ppt", "pptx", "txt", "csv"],
+            key="document_uploader"
         )
         
-        if st.button("Upload") and uploaded_files:
-            for file in uploaded_files:
-                try:
-                    # Save the uploaded file temporarily
-                    temp_file = Path("temp") / file.name
-                    temp_file.parent.mkdir(exist_ok=True)
-                    
-                    with open(temp_file, "wb") as f:
-                        f.write(file.getvalue())
-                    
-                    # Upload to backend
-                    result = self.api.upload_document(temp_file)
-                    st.success(f"Successfully uploaded {file.name}")
-                    
-                    # Clean up temp file
-                    temp_file.unlink()
-                except Exception as e:
-                    st.error(f"Error uploading {file.name}: {str(e)}")
+        # Upload button with smaller size
+        if st.sidebar.button("Upload", use_container_width=True) and uploaded_file:
+            try:
+                # Save the uploaded file temporarily
+                temp_file = Path("temp") / uploaded_file.name           
+                temp_file.parent.mkdir(exist_ok=True)
+                
+                with open(temp_file, "wb") as f:
+                    f.write(uploaded_file.getvalue())
+
+                # Upload document and get collection name
+                collection_name = upload_document(temp_file)
+                st.session_state.collection_name = collection_name
+                
+                # Show success message with collection name
+                if collection_name:
+                    st.sidebar.success(f"Successfully uploaded {uploaded_file.name} to collection: {collection_name}")
+                else:
+                    st.sidebar.success(f"Successfully uploaded {uploaded_file.name}")
+                
+                # Clean up temp file
+                temp_file.unlink()
+            except Exception as e:
+                st.sidebar.error(f"Failed to upload document. Please try again.")

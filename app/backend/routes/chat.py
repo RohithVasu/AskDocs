@@ -1,9 +1,10 @@
-from app.backend.routes import ChatRequest, AppResponse
-from app.backend.services.chat_service import Chat
 from datetime import datetime
 from fastapi import APIRouter
 
-chat_router = APIRouter(prefix="/chat")
+from app.backend.services.chat_service import Chat
+from app.backend.routes import AppResponse, ChatRequest
+
+chat_router = APIRouter()
 
 chat_service = Chat()
 

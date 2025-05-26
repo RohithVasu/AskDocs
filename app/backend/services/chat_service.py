@@ -7,7 +7,7 @@ from langchain.chains import create_history_aware_retriever
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from app.backend.core.settings import settings
+from app.core.settings import settings
 
 
 class Chat:

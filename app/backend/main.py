@@ -2,9 +2,10 @@ from fastapi import FastAPI
 from loguru import logger
 import uvicorn
 
-from app.backend.core.settings import settings
+from app.core.settings import settings
 from app.backend.routes.chat import chat_router
 from app.backend.routes.documents_index import index_router
+from app.backend.routes.health import health_router
 
 
 # Initialize FastAPI app
@@ -18,6 +19,7 @@ app = FastAPI(
 # Include routes
 app.include_router(index_router)
 app.include_router(chat_router)
+app.include_router(health_router)
 
 
 def run():

@@ -1,11 +1,13 @@
-from app.backend.routes import AppResponse
-from fastapi import APIRouter, UploadFile, File
-import os
 from datetime import datetime
-from app.backend.services.document_processor import DocumentProcessor
-from app.backend.core.settings import settings
+from fastapi import APIRouter, UploadFile, File
+from loguru import logger
+import os
 
-index_router = APIRouter(prefix="/documents")
+from app.backend.routes import AppResponse
+from app.backend.services.document_processor import DocumentProcessor
+from app.core.settings import settings
+
+index_router = APIRouter()
 
 # Initialize services
 document_processor = DocumentProcessor()
@@ -13,6 +15,8 @@ document_processor = DocumentProcessor()
 @index_router.post("/upload", response_model=AppResponse)
 async def upload_document(file: UploadFile = File(...)):
     """Upload and process a document."""
+    logger.info(f"Indexing document: {file.filename}")
+
     start_time = datetime.now()
     # Save uploaded file
     file_path = os.path.join(
@@ -29,6 +33,9 @@ async def upload_document(file: UploadFile = File(...)):
     collection_name =document_processor.create_vector_store(texts, file.filename)
     
     time_taken = datetime.now() - start_time
+
+    logger.info(f"Document indexed successfully: {file.filename}")
+
     return AppResponse(
         time=str(time_taken.total_seconds()) + " seconds",
         data={
