@@ -54,3 +54,7 @@ coverage.xml
 dist/
 build/
 .eggs/
+
+# Logs
+backend.log
+frontend.log

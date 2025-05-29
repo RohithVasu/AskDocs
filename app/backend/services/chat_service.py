@@ -15,7 +15,7 @@ class Chat:
         self.chat_model = ChatGoogleGenerativeAI(
             model=settings.llm.model,
             temperature=settings.llm.temperature,
-            api_key=settings.GOOGLE_API_KEY
+            api_key=settings.LLM_API_KEY
         )
         self.embeddings = HuggingFaceEmbeddings(
             model_name="all-MiniLM-L6-v2"

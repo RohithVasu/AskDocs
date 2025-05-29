@@ -1,6 +1,28 @@
-# Document Chat Application
+# AskDocs
 
-A production-ready application that allows users to index various document types (DOCX, Excel, CSV, PDF) and chat with them using AI.
+**AskDocs** is an intelligent application that allows users to upload and index a variety of document formats—including PDF, DOCX, PPT, and CSV—and interact with the content through natural language conversations.
+
+**Key Features**:
+- **📄 Multi-format Support**: Upload and index DOCX, PDF, PPT, and CSV files
+- **💬 Conversational AI**: Ask questions about document content and get accurate, context-aware answers
+- **🚀 Fast & Scalable Search**: Uses vector databases for semantic search and retrieval
+- **🧠 Memory & Context**: Understands multi-turn conversations for deeper insights
+- **🔐 Secure & Extensible**: Built with privacy and modularity in mind
+
+**Powered by cutting-edge AI technologies**:
+- **LLM (Large Language Models)**: For natural language understanding and generation
+- **LangChain**: For enhanced document processing and retrieval
+- **Vector Search**: For semantic search capabilities
+
+This tool transforms static documents into interactive knowledge sources. Whether it's reports, contracts, spreadsheets, or research papers, you can now ask questions, summarize, extract insights, and explore data contextually—as if you were chatting with a human expert.
+
+## Prerequisites
+
+- **[Python](https://www.python.org/)**: Version 3.12 or higher
+- **[uv](https://docs.astral.sh/uv/getting-started/installation/)**: Package manager for python
+- **[Docker](https://docs.docker.com/get-started/get-docker/)**: For containerizing and running the application in isolated environments
+- **[Make](https://www.gnu.org/software/make)**: For using Makefile commands
+
 
 ## Features
 
@@ -16,65 +38,20 @@ A production-ready application that allows users to index various document types
 ### Using Docker (Recommended)
 
 ```bash
-docker build -t doc-chat .
-docker run -p 8501:8501 -p 8000:8000 doc-chat
+make build
+make run
 ```
 
 ### Local Installation
 
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Set up environment variables:
+1. Set up environment variables:
 Create a `.env` file with:
 ```
-OPENAI_API_KEY=your_api_key_here
+ASKDOCS_LLM_API_KEY=your_api_key_here
 ```
 
-3. Run the application:
+2. Run the application:
 ```bash
-# Start FastAPI server
-uvicorn app.main:app --reload --port 8000
-
-# Start Streamlit interface in another terminal
-streamlit run app/frontend/app.py
+./start.sh
 ```
 
-## Usage
-
-1. Upload documents through the Streamlit interface
-2. Ask questions about the uploaded documents
-3. Get AI-powered responses based on the document content
-
-## API Documentation
-
-The FastAPI server provides the following endpoints:
-
-- `POST /upload` - Upload documents
-- `POST /chat` - Chat with documents
-- `GET /health` - Health check endpoint
-
-## Supported Document Types
-
-- Microsoft Word (.docx)
-- Microsoft Excel (.xlsx)
-- CSV (.csv)
-- PDF (.pdf)
-
-## Project Structure
-
-```
-.
-├── app/
-│   ├── backend/         # FastAPI backend
-│   │   ├── main.py      # API endpoints
-│   │   ├── models.py    # Pydantic models
-│   │   └── utils.py     # Utility functions
-│   └── frontend/        # Streamlit frontend
-│       └── app.py       # Streamlit interface
-├── config/              # Configuration files
-├── docker/              # Docker configuration
-└── tests/              # Test files
-```
