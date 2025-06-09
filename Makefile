@@ -16,9 +16,21 @@ run:
 	fi
 	docker run --env-file .env --name $(IMAGE_NAME) -p $(PORT):8501 $(IMAGE_NAME)
 
+# Start the Docker container
+start:
+	docker start $(IMAGE_NAME)
+
+# Stop the Docker container
+stop:
+	docker stop $(IMAGE_NAME) || true
+
 # Remove the Docker image
-clean:
+clean-image:
 	docker rmi $(IMAGE_NAME) || true
 
+# Remove the Docker container
+clean-container:
+	docker rm $(IMAGE_NAME) || true
+
 # Full rebuild
-rebuild: clean build
+rebuild: stop clean-container clean-image build

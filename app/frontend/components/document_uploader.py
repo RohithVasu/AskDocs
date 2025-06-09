@@ -3,13 +3,10 @@ from pathlib import Path
 from app.frontend.services.api_service import APIService
 from loguru import logger
 
-# Initialize API service
-api_service = APIService()
-
 class DocumentUploader:
     def __init__(self):
-        pass
-
+        self.api_service = APIService()
+    
     def render(self) -> None:
         """Render the document upload component."""
         st.sidebar.subheader("Upload Document")
@@ -36,7 +33,7 @@ class DocumentUploader:
                     f.write(uploaded_file.getvalue())
 
                 # Upload document and get collection name
-                collection_name = api_service.upload_document(temp_file)
+                collection_name = self.api_service.upload_document(temp_file)
                 st.session_state.collection_name = collection_name
                 
                 # Clear loading info and show success/error message

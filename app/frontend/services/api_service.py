@@ -9,12 +9,12 @@ class APIService:
         self.base_url = f"http://{settings.fastapi.host}:{settings.fastapi.port}"
         self.session = requests.Session()
 
-    def health_check(self) -> bool:
+    def check_health(self) -> bool:
         """Check if the backend service is healthy."""
         try:
             response = self.session.get(f"{self.base_url}/health")
             response.raise_for_status()
-            return True
+            return response.json().get("status") == "healthy"
         except requests.exceptions.RequestException as e:
             logger.error(f"Health check failed: {str(e)}")
             return False

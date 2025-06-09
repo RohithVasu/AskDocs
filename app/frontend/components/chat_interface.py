@@ -3,10 +3,10 @@ import time
 from app.frontend.services.api_service import APIService
 from loguru import logger
 
-api_service = APIService()
 
 class ChatInterface:
     def __init__(self):
+        self.api_service = APIService()
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = []
         if "pending_question" not in st.session_state:
@@ -30,7 +30,7 @@ class ChatInterface:
             st.session_state.chat_history.append({"role": "assistant", "content": ""})
 
             try:
-                response = api_service.chat(
+                response = self.api_service.chat(
                     question=question,
                     collection_name=collection_name
                 )
