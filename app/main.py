@@ -16,4 +16,3 @@ app = FastAPI(
 app.include_router(health_check_router)
 app.include_router(index_router)
 app.include_router(chat_router)
-

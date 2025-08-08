@@ -1,6 +1,6 @@
 from loguru import logger
 import os
-from typing import List
+from typing import List, Sequence
 from pathlib import Path
 
 from langchain_community.document_loaders import (
@@ -15,6 +15,21 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from app.core.settings import settings
+
+
+def get_loader(file_extension: str, file_path: str):
+    """Get appropriate document loader based on file type."""
+    loaders = {
+        ".docx": lambda: UnstructuredWordDocumentLoader(file_path),
+        ".csv": lambda: CSVLoader(file_path),
+        ".pdf": lambda: PyPDFLoader(file_path),
+        ".pptx": lambda: UnstructuredPowerPointLoader(file_path),
+        ".ppt": lambda: UnstructuredPowerPointLoader(file_path),
+        ".txt": lambda: TextLoader(file_path),
+        ".md": lambda: TextLoader(file_path)
+    }
+    return loaders[file_extension]()
+
 
 class DocumentProcessor:
     def __init__(self):
@@ -32,7 +47,7 @@ class DocumentProcessor:
         os.makedirs(settings.data.vector_store_dir, exist_ok=True)
         os.makedirs(settings.data.documents_dir, exist_ok=True)
 
-    def process_document(self, file_path: str) -> List[Document]:
+    def process_document(self, file_path: str) -> Sequence[Document]:
         """Process a document and return its text chunks."""
         # Get file extension
         file_extension = Path(file_path).suffix.lower()
@@ -42,7 +57,7 @@ class DocumentProcessor:
             raise ValueError(f"Unsupported file type: {file_extension}")
         
         # Load document
-        loader = self._get_loader(file_extension, file_path)
+        loader = get_loader(file_extension, file_path)
         documents = loader.load()
         
         # Split into chunks
@@ -67,17 +82,3 @@ class DocumentProcessor:
         vector_store.add_documents(documents)
 
         return collection_name
-        
-
-    def _get_loader(self, file_extension: str, file_path: str):
-        """Get appropriate document loader based on file type."""
-        loaders = {
-            ".docx": lambda: UnstructuredWordDocumentLoader(file_path),
-            ".csv": lambda: CSVLoader(file_path),
-            ".pdf": lambda: PyPDFLoader(file_path),
-            ".pptx": lambda: UnstructuredPowerPointLoader(file_path),
-            ".ppt": lambda: UnstructuredPowerPointLoader(file_path),
-            ".txt": lambda: TextLoader(file_path),
-            ".md": lambda: TextLoader(file_path)
-        }
-        return loaders[file_extension]()
