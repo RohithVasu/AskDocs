@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.orm import Session
 
 from . import CRUDManager
@@ -36,21 +36,21 @@ class DocumentHandler(CRUDManager[Document, DocumentCreate, DocumentUpdate, Docu
     def create(self, obj_in: DocumentCreate) -> DocumentResponse:
         return super().create(obj_in)
 
-    def read(self, id: int) -> DocumentResponse:
+    def read(self, id: str) -> DocumentResponse:
         return super().read(id)
         
-    def update(self, id: int, obj_in: DocumentUpdate) -> DocumentResponse:
+    def update(self, id: str, obj_in: DocumentUpdate) -> DocumentResponse:
         return super().update(id, obj_in)
         
-    def delete(self, id: int) -> dict:
+    def delete(self, id: str) -> dict:
         return super().delete(id)
     
     def list_all(self) -> List[DocumentResponse]:
         return super().list_all()
 
-    def get_by_user(self, user_id: str) -> List[DocumentResponse]:
+    def get_by_user(self, user_id: str, skip: int = 0, limit: int = 20) -> List[DocumentResponse]:
         """Get all documents for a user."""
-        documents = self._db.query(Document).filter(Document.user_id == user_id).all()
+        documents = self._db.query(Document).filter(Document.user_id == user_id).offset(skip).limit(limit).all()
         return [self._response_schema.model_validate(doc) for doc in documents]
 
     def get_by_folder(self, folder_id: str) -> List[DocumentResponse]:

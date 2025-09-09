@@ -1,35 +1,17 @@
 from loguru import logger
 import os
-from typing import List, Sequence
+from typing import List
 from pathlib import Path
-
-from langchain_community.document_loaders import (
-    CSVLoader,
-    TextLoader,
-    PyPDFLoader,
-    UnstructuredPowerPointLoader,
-    UnstructuredWordDocumentLoader,
-)
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from qdrant_client.http import models
+from sqlalchemy.orm import Session
+import uuid
+
 from app.core.settings import settings
-
-
-def get_loader(file_extension: str, file_path: str):
-    """Get appropriate document loader based on file type."""
-    loaders = {
-        ".docx": lambda: UnstructuredWordDocumentLoader(file_path),
-        ".csv": lambda: CSVLoader(file_path),
-        ".pdf": lambda: PyPDFLoader(file_path),
-        ".pptx": lambda: UnstructuredPowerPointLoader(file_path),
-        ".ppt": lambda: UnstructuredPowerPointLoader(file_path),
-        ".txt": lambda: TextLoader(file_path),
-        ".md": lambda: TextLoader(file_path)
-    }
-    return loaders[file_extension]()
-
+from app.core.qdrant import Qdrant
+from app.services.document_loader import UniversalDocumentLoader
+from app.model_handlers.document_handler import DocumentHandler, DocumentCreate
 
 class DocumentProcessor:
     def __init__(self):
@@ -39,46 +21,60 @@ class DocumentProcessor:
         )
         
         # Initialize embeddings model
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name="all-MiniLM-L6-v2"
-        )
+        self.qdrant = Qdrant()
+        
+        # Initialize document loader
+        self.document_loader = UniversalDocumentLoader()
         
         # Create required directories
-        os.makedirs(settings.data.vector_store_dir, exist_ok=True)
         os.makedirs(settings.data.documents_dir, exist_ok=True)
 
-    def process_document(self, file_path: str) -> Sequence[Document]:
+    def process_document(self, file_path: str, user_id: str, db: Session) -> List[Document]:
         """Process a document and return its text chunks."""
-        # Get file extension
-        file_extension = Path(file_path).suffix.lower()
-        
-        # Check if we support this file type
-        if file_extension not in settings.data.supported_file_types:
-            raise ValueError(f"Unsupported file type: {file_extension}")
-        
-        # Load document
-        loader = get_loader(file_extension, file_path)
-        documents = loader.load()
-        
-        # Split into chunks
-        documents_split = self.text_splitter.transform_documents(documents)
-        return documents_split
 
-    def create_vector_store(self, documents: List[Document], file_name: str) -> str:
-        """Create a vector store for the document."""
-        # Clean the file name to create a valid collection name
-        collection_name = f"doc_{file_name.lower().replace(' ', '_').replace('.', '_')}"
-        collection_name = collection_name[:50]
-        
-        logger.debug(f"Creating vector store with collection name: {collection_name}")
-        
-        vector_store = Chroma(
-            collection_name=collection_name,
-            embedding_function=self.embeddings,
-            persist_directory=settings.data.vector_store_dir
-        )
-        
-        # Add texts to the vector store
-        vector_store.add_documents(documents)
+        collection_name = user_id + "_" + Path(file_path).stem
+        document_handler = DocumentHandler(db)
+        try:
+            # Load document
+            documents = self.document_loader.load(file_path)
 
-        return collection_name
+            # Split into chunks
+            text_chunks = self.text_splitter.split_documents(documents)
+
+            # Prepare points for Qdrant
+            points = []
+            for chunk in text_chunks:
+                payload = {
+                    **chunk.metadata,                     # keep all metadata from loader
+                    "source": Path(file_path).name,       # original file name
+                    "content": chunk.page_content         # actual text
+                }
+
+                embedding = self.qdrant._get_embedding(chunk.page_content)
+
+                points.append(
+                    models.PointStruct(
+                        id=str(uuid.uuid4()),
+                        vector=embedding,
+                        payload=payload
+                    )
+                )
+
+            # Bulk insert for speed
+            self.qdrant._ensure_collection(collection_name)
+            self.qdrant.client.upsert(
+                collection_name=collection_name,
+                points=points
+            )
+
+            # Create document record
+            document_handler.create(DocumentCreate(
+                user_id=user_id,
+                filename=Path(file_path).name,
+                file_path=file_path,
+                vector_collection=collection_name
+            ))
+            
+        except Exception as e:
+            logger.error(f"Error processing document {file_path}: {str(e)}")
+            raise

@@ -18,23 +18,9 @@ PORT=$(python -c "from app.core.settings import settings; print(settings.fastapi
 
 # Start backend server in background
 echo "Starting backend server on $HOST:$PORT..."
-PYTHONPATH=. uvicorn app.backend.main:app \
+PYTHONPATH=. uvicorn app.main:app \
   --host "$HOST" \
   --port "$PORT" \
   --reload \
-  --reload-dir ./app/backend \
-  --reload-exclude ./app/frontend \
-  > backend.log 2>&1 &
+  --reload-dir ./app
 
-BACKEND_PID=$!
-
-# Start frontend (Streamlit) in background
-echo "Starting frontend (Streamlit)..."
-PYTHONPATH=. streamlit run app/frontend/main.py > frontend.log 2>&1 &
-
-FRONTEND_PID=$!
-
-# Wait for both processes
-echo "Backend PID: $BACKEND_PID"
-echo "Frontend PID: $FRONTEND_PID"
-wait $BACKEND_PID $FRONTEND_PID
