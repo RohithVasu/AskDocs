@@ -79,9 +79,9 @@ class CRUDManager[SqlModelType, CreateSchemaType, UpdateSchemaType, ResponseSche
         self._db.commit()
         return {"id": id}
 
-    def list_all(self) -> List[ResponseSchemaType]:
+    def list_all(self, skip: int = 0, limit: int = 20) -> List[ResponseSchemaType]:
         """
         List all records.
         """
-        db_objs = self._db.query(self._model).all()
+        db_objs = self._db.query(self._model).offset(skip).limit(limit).all()
         return [self._response_schema.model_validate(db_obj) for db_obj in db_objs]

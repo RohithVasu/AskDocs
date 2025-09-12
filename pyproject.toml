@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "bcrypt>=4.3.0",
     "chromadb>=0.6.3",
     "docx2txt>=0.9",
     "dynaconf>=3.2.11",

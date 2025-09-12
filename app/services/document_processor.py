@@ -12,6 +12,7 @@ from app.core.settings import settings
 from app.core.qdrant import Qdrant
 from app.services.document_loader import UniversalDocumentLoader
 from app.model_handlers.document_handler import DocumentHandler, DocumentCreate
+from app.core.db import get_global_db_session
 
 class DocumentProcessor:
     def __init__(self):
@@ -32,7 +33,7 @@ class DocumentProcessor:
     def process_document(self, file_path: str, user_id: str, db: Session) -> List[Document]:
         """Process a document and return its text chunks."""
 
-        collection_name = user_id + "_" + Path(file_path).stem
+        collection_name = str(user_id) + "_" + str(Path(file_path).stem)
         document_handler = DocumentHandler(db)
         try:
             # Load document
@@ -69,7 +70,7 @@ class DocumentProcessor:
 
             # Create document record
             document_handler.create(DocumentCreate(
-                user_id=user_id,
+                user_id=str(user_id),
                 filename=Path(file_path).name,
                 file_path=file_path,
                 vector_collection=collection_name

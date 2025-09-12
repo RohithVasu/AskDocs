@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from sqlalchemy.orm import Session
+from uuid import UUID
 
 from . import CRUDManager
 from app.models.document import Document
@@ -11,6 +12,7 @@ class DocumentCreate(BaseModel):
     user_id: str = Field(..., description="ID of the user who owns the document")
     folder_id: Optional[str] = Field(None, description="ID of the folder containing the document")
     filename: str = Field(..., description="Name of the document file")
+    file_path: str = Field(..., description="Path to the document file")
     vector_collection: str = Field(..., description="Vector collection for the document")
 
 class DocumentUpdate(BaseModel):
@@ -22,12 +24,19 @@ class DocumentUpdate(BaseModel):
 class DocumentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
-    id: str = Field(..., description="Unique identifier for the document")
-    user_id: str = Field(..., description="ID of the user who owns the document")
+    id: UUID = Field(..., description="Unique identifier for the document")
+    user_id: UUID = Field(..., description="ID of the user who owns the document")
     folder_id: Optional[str] = Field(None, description="ID of the folder containing the document")
     filename: str = Field(..., description="Name of the document file")
     vector_collection: str = Field(..., description="Vector collection for the document")
-    uploaded_at: datetime = Field(..., description="Timestamp when the document was uploaded")
+
+    @field_serializer("id")
+    def serialize_id(self, v: UUID) -> str:
+        return str(v)
+
+    @field_serializer("user_id")
+    def serialize_user_id(self, v: UUID) -> str:
+        return str(v)
 
 class DocumentHandler(CRUDManager[Document, DocumentCreate, DocumentUpdate, DocumentResponse]):
     def __init__(self, db: Session):

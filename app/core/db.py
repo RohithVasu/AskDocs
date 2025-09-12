@@ -1,11 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import DeclarativeBase
 from langchain_community.utilities import SQLDatabase
 from contextlib import contextmanager
 from sqlmodel import Session
 
 from app.core.settings import settings
+import app.models
 
 
 # Update your PostgreSQL connection details
@@ -24,9 +24,6 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # ----------------------------------------------------------------------------------------------------
-
-class Base(DeclarativeBase):
-    pass
 
 def get_postgresql_engine():
     """Create an engine to connect to the PostgreSQL database."""

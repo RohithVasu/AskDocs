@@ -12,8 +12,6 @@ from app.core.settings import settings
 from app.model_handlers.document_handler import DocumentHandler, DocumentUpdate
 from app.model_handlers.user_handler import UserResponse
 from app.core.db import get_global_db_session
-from app.core.redis import task_queue
-
 
 document_router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -26,6 +24,7 @@ document_handler = DocumentHandler(db_session)
 async def upload_document(
     file: UploadFile = File(...),
     user: UserResponse = Depends(get_current_user),
+    db: Session = Depends(get_global_db_session)
 ):
     """Upload and process a document."""
     logger.info(f"Processing document: {file.filename} for user: {user.id}")
@@ -42,7 +41,7 @@ async def upload_document(
         buffer.write(content)
     
     # Process document
-    job = task_queue.enqueue(document_processor.process_document, file_path, user.id, db)
+    document_processor.process_document(file_path, user.id, db)
     
     time_taken = datetime.now() - start_time
 
@@ -50,8 +49,7 @@ async def upload_document(
         status="success",
         message="Document queued for processing",
         data={
-            "collection_name": user.id + "_" + Path(file_path).stem,
-            "redis_job_id": job.id,
+            "collection_name": str(user.id) + "_" + str(Path(file_path).stem),
             "time_taken": str(time_taken.total_seconds()) + " seconds"
         }
     )

@@ -1,36 +1,56 @@
-# Image name
-IMAGE_NAME = askdocs
+# Docker Compose file
+COMPOSE_FILE = ops/docker-compose.yaml
+PROJECT_NAME=askdocs
 
-# Default port exposed by Streamlit
-PORT = 8501
+# Base Compose command
+DC=docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
 
-# Build the Docker image
+# Build the images (no start)
 build:
-	docker build -t $(IMAGE_NAME) -f ops/Dockerfile .
+	$(DC) build
 
-# Run the Docker container with env variable
-run:
-	@if [ ! -f .env ]; then \
-		echo "Error: .env file not found."; \
-		exit 1; \
-	fi
-	docker run --env-file .env --name $(IMAGE_NAME) -p $(PORT):8501 $(IMAGE_NAME)
+# Build images from scratch (no cache)
+build-nc:
+	$(DC) build --no-cache
 
-# Start the Docker container
-start:
-	docker start $(IMAGE_NAME)
+# Start services (does not rebuild images)
+up:
+	$(DC) up -d
 
-# Stop the Docker container
+# Start services and rebuild if needed
+up-build:
+	$(DC) up --build -d
+	docker image prune -f
+
+# Start dependencies only
+up-deps:
+	$(DC) up -d postgres pgadmin qdrant redis redis-worker
+
+# Start backend only
+up-backend:
+	$(DC) up -d backend
+
+# Stop services (but keep containers, volumes, and network)
 stop:
-	docker stop $(IMAGE_NAME) || true
+	$(DC) stop
 
-# Remove the Docker image
-clean-image:
-	docker rmi $(IMAGE_NAME) || true
+# Restart services
+restart:
+	$(MAKE) stop
+	$(MAKE) up
 
-# Remove the Docker container
-clean-container:
-	docker rm $(IMAGE_NAME) || true
+# Bring everything down (containers, networks)
+down:
+	$(DC) down
 
-# Full rebuild
-rebuild: stop clean-container clean-image build
+# Bring everything down and remove volumes and orphans
+nuke:
+	$(DC) down --volumes --remove-orphans
+
+# View logs
+logs:
+	$(DC) logs -f
+
+# Show status
+ps:
+	$(DC) ps

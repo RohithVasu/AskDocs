@@ -67,5 +67,6 @@ async def delete_user(user_id: str,
     handler.delete(user_id)
     return AppResponse(
         status="success",
-        message="User deleted successfully"
+        message="User deleted successfully",
+        data={}
     )

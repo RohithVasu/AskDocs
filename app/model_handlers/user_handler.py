@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
+from uuid import UUID
 
 from . import CRUDManager
 from app.models.user import User
@@ -21,12 +23,17 @@ class UserUpdate(BaseModel):
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
-    id: str = Field(..., description="Unique identifier for the user")
+    id: UUID = Field(..., description="Unique identifier for the user")
     email: str = Field(..., description="User's email address")
     firstname: str = Field(..., description="User's firstname")
     lastname: str = Field(..., description="User's lastname")
     password: Optional[str] = Field(None, description="User's password")
     created_at: datetime = Field(..., description="Timestamp of user creation")
+
+    @field_serializer("id")
+    def serialize_id(self, v: UUID) -> str:
+        return str(v)
+
 
 class UserHandler(CRUDManager[User, UserCreate, UserUpdate, UserResponse]):
     def __init__(self, db: Session):

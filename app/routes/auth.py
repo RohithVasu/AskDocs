@@ -22,7 +22,10 @@ from app.model_handlers.user_handler import UserHandler, UserCreate, UserRespons
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 # OAuth2PasswordBearer will tell FastAPI where to get the token
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="auth/token",
+    scheme_name="JWT",
+)
 
 # ---------------------------
 # Dependency to get current user
@@ -67,12 +70,15 @@ async def register(user: UserCreate, db: Session = Depends(get_global_db_session
         )
 
     hashed_password = get_password_hash(user.password)
-    new_user = user_handler.create({
-        "email": user.email,
-        "password": hashed_password,
-        "firstname": user.firstname,
-        "lastname": user.lastname
-    })
+
+    new_user = user_handler.create(
+        UserCreate(
+            email=user.email,
+            password=hashed_password,
+            firstname=user.firstname,
+            lastname=user.lastname
+        )
+    )
 
     return AppResponse(
         status="success",
@@ -120,6 +126,34 @@ async def login_for_access_token(
             "token_type": "bearer"
         }
     )
+
+# ---------------------------
+# Token (for Swagger API)
+# ---------------------------
+
+@auth_router.post("/token")
+async def login_swagger(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_global_db_session)
+):
+    user_handler = UserHandler(db)
+    user = user_handler.get_by_email(form_data.username, with_password=True)
+    if not user or not verify_password(form_data.password, user.password):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 # ---------------------------
 # Refresh Access Token
@@ -179,5 +213,6 @@ async def logout():
     # 2. Mark as invalid on logout
     return AppResponse(
         status="success",
-        message="Successfully logged out"
+        message="Successfully logged out",
+        data={}
     )
