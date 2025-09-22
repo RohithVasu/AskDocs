@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
+from uuid import UUID
 from sqlalchemy.orm import Session
 from . import CRUDManager
 from app.models.chat_session import ChatSession
@@ -8,18 +9,20 @@ from app.models.chat_session import ChatSession
 
 class ChatSessionCreate(BaseModel):
     user_id: str = Field(..., description="ID of the user associated with this session")
+    name: str = Field(..., description="Name of the session")
 
 class ChatSessionUpdate(BaseModel):
-    user_id: Optional[str] = Field(None, description="ID of the user associated with this session")
+    name: Optional[str] = Field(None, description="Name of the session")
 
 class ChatSessionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
-    id: str = Field(..., description="Unique identifier for the chat session")
-    user_id: str = Field(..., description="ID of the user associated with this session")
-    response: str = Field(..., description="The AI's response message")
-    document_ids: Optional[List[str]] = Field(None, description="List of document IDs referenced in this message")
-    started_at: datetime = Field(..., description="Timestamp when the session started")
+    id: UUID = Field(..., description="Unique identifier for the chat session")
+    name: str = Field(..., description="Name of the session")
+
+    @field_serializer("id")
+    def serialize_id(self, v: UUID) -> str:
+        return str(v)
 
 class ChatSessionHandler(CRUDManager[ChatSession, ChatSessionCreate, ChatSessionUpdate, ChatSessionResponse]):
     def __init__(self, db: Session):

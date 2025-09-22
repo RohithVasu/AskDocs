@@ -12,6 +12,18 @@ if [ -z "$ASKDOCS_LLM_API_KEY" ]; then
     exit 1
 fi
 
+if [ -z "$ENV_FOR_DYNACONF" ]; then
+    echo "Error: ENV_FOR_DYNACONF environment variable is not set"
+    echo "Please set ENV_FOR_DYNACONF (e.g., 'dev' or 'prod') before running the application"
+    exit 1
+fi
+
+if [ -z "$ASKDOCS_DB_PASSWORD" ]; then
+    echo "Error: ASKDOCS_DB_PASSWORD environment variable is not set"
+    echo "Please set ASKDOCS_DB_PASSWORD before running the application"
+    exit 1
+fi
+
 # Pull values from env variables or hardcoded config
 HOST=$(python -c "from app.core.settings import settings; print(settings.fastapi.host)")
 PORT=$(python -c "from app.core.settings import settings; print(settings.fastapi.port)")

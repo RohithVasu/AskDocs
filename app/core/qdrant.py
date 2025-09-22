@@ -3,6 +3,7 @@ import json
 from loguru import logger
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from langchain_qdrant import QdrantVectorStore
 from sentence_transformers import SentenceTransformer
 from typing import Dict, List, Optional, Any
 import uuid
@@ -37,6 +38,24 @@ class Qdrant:
                 ),
                 on_disk_payload=True
             )
+
+    def search(self, query: str, user_id: Optional[str] = None, limit: Optional[int] = None) -> List[Dict]:
+        """Perform semantic search on chat history or database documents"""
+        if limit is None:
+            limit = self.search_limit
+        
+        collection_name = self._get_collection_name(user_id)
+        query_embedding = self._get_embedding(query)
+        
+        # Search in Qdrant
+        result = self.client.search(
+            collection_name=collection_name,
+            query_vector=query_embedding,
+            limit=limit,
+            with_payload=True
+        )
+        
+        return [hit.payload for hit in result]
 
     # def add_document(self, collection_name: str, payload: Dict[str, Any], content: str):
     #     """Add a single chunk to the collection."""
@@ -112,21 +131,3 @@ class Qdrant:
     #     except Exception as e:
     #         logger.error(f"Error managing aliases: {str(e)}")
     #         raise
-
-    # def search(self, query: str, user_id: Optional[str] = None, limit: Optional[int] = None) -> List[Dict]:
-    #     """Perform semantic search on chat history or database documents"""
-    #     if limit is None:
-    #         limit = self.search_limit
-        
-    #     collection_name = self._get_collection_name(user_id)
-    #     query_embedding = self._get_embedding(query)
-        
-    #     # Search in Qdrant
-    #     result = self.client.search(
-    #         collection_name=collection_name,
-    #         query_vector=query_embedding,
-    #         limit=limit,
-    #         with_payload=True
-    #     )
-        
-    #     return [hit.payload for hit in result]

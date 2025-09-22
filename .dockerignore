@@ -13,6 +13,7 @@ __pycache__/
 # Ignore logs, environment files, and build artifacts
 *.log
 .env
+.env.example
 *.egg-info/
 dist/
 build/

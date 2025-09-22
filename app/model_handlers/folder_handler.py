@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
+from uuid import UUID
 from sqlalchemy.orm import Session
 
 from . import CRUDManager
@@ -8,20 +9,31 @@ from app.models.folder import Folder
 
 
 class FolderCreate(BaseModel):
-    user_id: str = Field(..., description="ID of the user who owns the folder")
+    user_id: UUID = Field(..., description="ID of the user who owns the folder")
     name: str = Field(..., description="Name of the folder")
 
+    @field_serializer("user_id")
+    def serialize_user_id(self, v: UUID) -> str:
+        return str(v)
+
 class FolderUpdate(BaseModel):
-    user_id: Optional[str] = Field(None, description="ID of the user who owns the folder")
     name: Optional[str] = Field(None, description="Name of the folder")
 
 class FolderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
-    id: str = Field(..., description="Unique identifier for the folder")
-    user_id: str = Field(..., description="ID of the user who owns the folder")
+    id: UUID = Field(..., description="Unique identifier for the folder")
+    user_id: UUID = Field(..., description="ID of the user who owns the folder")
     name: str = Field(..., description="Name of the folder")
     created_at: datetime = Field(..., description="Timestamp when the folder was created")
+
+    @field_serializer("user_id")
+    def serialize_user_id(self, v: UUID) -> str:
+        return str(v)
+
+    @field_serializer("id")
+    def serialize_id(self, v: UUID) -> str:
+        return str(v)
 
 class FolderHandler(CRUDManager[Folder, FolderCreate, FolderUpdate, FolderResponse]):
     def __init__(self, db: Session):

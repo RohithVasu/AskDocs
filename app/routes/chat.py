@@ -1,32 +1,43 @@
-from datetime import datetime
-from fastapi import APIRouter
+from fastapi import Depends, APIRouter
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
-from app.backend.services.chat_service import Chat
-from app.backend.routes import AppResponse, ChatRequest
+from app.services.chat_service import Chat
+from app.routes import AppResponse
+from app.model_handlers.chat_message_handler import (
+    ChatMessageHandler,
+    ChatMessageCreate,
+)
+from app.core.db import get_global_db_session
 
-chat_router = APIRouter()
+chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
-chat_service = Chat()
+class ChatRequest(BaseModel):
+    session_id: str
+    query: str
 
-@chat_router.post("/chat", response_model=AppResponse)
-async def chat_with_documents(request: ChatRequest):
-    """Chat with the uploaded documents."""
-    start_time = datetime.now()
 
-    # Get chat response
-    answer, chat_history = chat_service.get_chat_response(
-        request.question,
-        request.collection_name
-    )  
+@chat_router.post("/", response_model=AppResponse)
+def chat(
+    request: ChatRequest, 
+    db: Session = Depends(get_global_db_session)
+):
+    """Send a message and get AI response."""
 
-    time_taken = datetime.now() - start_time
+    response = Chat().get_chat_response(
+        request.session_id,
+        request.query,
+    )
+
+    chat_message = ChatMessageCreate(
+        session_id=request.session_id,
+        query=request.query,
+        response=response
+    )
+    ChatMessageHandler(db).create(chat_message)
     
     return AppResponse(
-        time=str(time_taken.total_seconds()) + " seconds",
-        data={
-            "message": "Chat response generated successfully",
-            "question": request.question,
-            "answer": answer,
-            "chat_history": chat_history
-        }
+        status="success",
+        message="Response received successfully",
+        data={"query": request.query, "response": response}
     )

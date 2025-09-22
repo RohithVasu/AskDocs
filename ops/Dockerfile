@@ -10,8 +10,8 @@ COPY . /app
 WORKDIR /app
 RUN uv sync --frozen --no-cache
 
-# Expose only Streamlit port to host
-EXPOSE 8501
+# Set dynaconf environment for production
+ENV ENV_FOR_DYNACONF=production
 
 # Run the custom start script
 CMD ["bash", "start.sh"]

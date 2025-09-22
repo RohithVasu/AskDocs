@@ -34,10 +34,20 @@ up-backend:
 stop:
 	$(DC) stop
 
-# Restart services
-restart:
-	$(MAKE) stop
+# Restart full app (rebuild backend image, then start everything)
+restart-app:
+	$(MAKE) down
+	docker rmi $(PROJECT_NAME)/backend || true
+	$(DC) build backend
 	$(MAKE) up
+
+# Restart dependencies
+restart-deps:
+	$(MAKE) down
+	docker rmi $(PROJECT_NAME)/backend || true
+	$(DC) build backend
+	$(DC) up -d postgres pgadmin qdrant redis redis-worker
+
 
 # Bring everything down (containers, networks)
 down:

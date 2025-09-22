@@ -16,7 +16,7 @@ retriever_prompt: &retriever_prompt
    Do not answer the question — only return the reformulated version. 
    If no rephrasing is needed, return the original question as is.
 
-development:
+production:
   fastapi:
     host: '0.0.0.0'
     port: 8000
@@ -30,25 +30,25 @@ development:
 
   db:
     username: 'askdocs'
-    host: 'localhost'
+    host: 'askdocs-postgres'
     port: 5432
     database: 'askdocs_db'
 
   qdrant:
-    url: 'http://localhost:6333'
+    url: 'http://askdocs-qdrant:6333'
     embed_model: 'all-MiniLM-L6-v2'
-    search_limit: 3
+    search_limit: 10
     scroll_limit: 10
 
   redis:
-    host: 'localhost'
+    host: 'askdocs-redis'
     port: 6379
 
   llm:
     system_prompt: *system_prompt
     retriever_prompt: *retriever_prompt 
-    model: 'gpt-4o-mini
-    model_provider: 'google'
+    model: 'gpt-4o-mini'
+    model_provider: 'openai'
     temperature: 0.2
 
   data:

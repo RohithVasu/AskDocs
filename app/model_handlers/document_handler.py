@@ -16,27 +16,25 @@ class DocumentCreate(BaseModel):
     vector_collection: str = Field(..., description="Vector collection for the document")
 
 class DocumentUpdate(BaseModel):
-    user_id: Optional[str] = Field(None, description="ID of the user who owns the document")
-    folder_id: Optional[str] = Field(None, description="ID of the folder containing the document")
     filename: Optional[str] = Field(None, description="Name of the document file")
+    folder_id: Optional[str] = Field(None, description="ID of the folder containing the document")
     vector_collection: Optional[str] = Field(None, description="Vector collection for the document")
 
 class DocumentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
     id: UUID = Field(..., description="Unique identifier for the document")
-    user_id: UUID = Field(..., description="ID of the user who owns the document")
-    folder_id: Optional[str] = Field(None, description="ID of the folder containing the document")
     filename: str = Field(..., description="Name of the document file")
+    folder_id: Optional[UUID] = Field(None, description="ID of the folder containing the document")
     vector_collection: str = Field(..., description="Vector collection for the document")
 
     @field_serializer("id")
     def serialize_id(self, v: UUID) -> str:
         return str(v)
 
-    @field_serializer("user_id")
-    def serialize_user_id(self, v: UUID) -> str:
-        return str(v)
+    @field_serializer("folder_id")
+    def serialize_folder_id(self, v: Optional[UUID]) -> Optional[str]:
+        return str(v) if v is not None else None
 
 class DocumentHandler(CRUDManager[Document, DocumentCreate, DocumentUpdate, DocumentResponse]):
     def __init__(self, db: Session):

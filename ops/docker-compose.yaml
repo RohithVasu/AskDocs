@@ -16,6 +16,8 @@ services:
       - redis
     networks:
       - askdocs-network
+    volumes:
+      - ../data/documents:/app/data/documents
 
   postgres:
     image: postgres:latest
@@ -67,8 +69,6 @@ services:
     restart: always
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
     networks:
       - askdocs-network
 
@@ -88,12 +88,13 @@ services:
       - ../.env
     deploy:
       replicas: 1
+    volumes:
+      - ../data/documents:/app/data/documents
 
 volumes:
   postgres_data:
   pgadmin_data:
   qdrant_data:
-  redis_data:
 
 networks:
   askdocs-network:
