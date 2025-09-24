@@ -8,6 +8,8 @@ services:
     restart: always
     ports:
       - "8000:8000"
+    environment:
+      ENV_FOR_DYNACONF: production
     env_file:
       - ../.env
     depends_on:
@@ -84,6 +86,8 @@ services:
       - redis
     networks:
       - askdocs-network
+    environment:
+      ENV_FOR_DYNACONF: production
     env_file: 
       - ../.env
     deploy:

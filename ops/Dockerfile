@@ -10,8 +10,5 @@ COPY . /app
 WORKDIR /app
 RUN uv sync --frozen --no-cache
 
-# Set dynaconf environment for production
-ENV ENV_FOR_DYNACONF=production
-
 # Run the custom start script
 CMD ["bash", "start.sh"]

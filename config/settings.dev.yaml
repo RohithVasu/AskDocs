@@ -46,9 +46,9 @@ development:
 
   llm:
     system_prompt: *system_prompt
-    retriever_prompt: *retriever_prompt 
-    model: 'gpt-4o-mini
-    model_provider: 'google'
+    retriever_prompt: *retriever_prompt
+    model: 'gpt-4o-mini'
+    model_provider: 'openai'
     temperature: 0.2
 
   data:

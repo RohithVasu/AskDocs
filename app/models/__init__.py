@@ -3,6 +3,7 @@ from app.models.document import Document
 from app.models.folder import Folder
 from app.models.chat_session import ChatSession
 from app.models.chat_message import ChatMessage
+from app.models.chat_session_documents import ChatSessionDocument
 
 __all__ = [
     "User",
@@ -10,4 +11,5 @@ __all__ = [
     "Folder",
     "ChatSession",
     "ChatMessage",
+    "ChatSessionDocument"
 ]
