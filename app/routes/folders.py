@@ -1,12 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from rq import Retry
+
+from app.model_handlers.document_handler import DocumentHandler
 from app.model_handlers.folder_handler import FolderHandler, FolderCreate, FolderUpdate
 from app.routes.auth import get_current_user
 from app.core.db import get_global_db_session
 from app.routes import AppResponse
 from app.model_handlers.user_handler import UserResponse
+from app.core.qdrant import get_qdrant_client
+from app.core.redis import queue
 
 folder_router = APIRouter(prefix="/folders", tags=["folders"])
+
+def delete_document_task(doc_name: str, collection_name: str):
+    qdrant_client = get_qdrant_client()
+    return qdrant_client.delete_document(doc_name, collection_name)
 
 @folder_router.post("/", response_model=AppResponse, status_code=status.HTTP_201_CREATED)
 async def create_folder(
@@ -89,10 +98,26 @@ async def delete_folder(
     folder = handler.read(folder_id)
     if folder is None:
         raise HTTPException(status_code=404, detail="Folder not found")
+
+    folder_id = folder.id
+    
+    document_handler = DocumentHandler(db)
+    documents = document_handler.get_by_folder(folder_id)
+
+    if documents:
+        job_ids = []
+        for document in documents:
+            job_ids.append(
+                queue.enqueue(
+                    delete_document_task,
+                    args=(document.filename, document.vector_collection),
+                    retry=Retry(max=3, interval=[10, 30, 60])
+                )
+            )
     
     handler.delete(folder_id)
     return AppResponse(
         status="success",
         message="Folder deleted successfully",
-        data={}
+        data={"job_ids": job_ids}
     )

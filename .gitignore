@@ -58,3 +58,5 @@ build/
 # Logs
 backend.log
 frontend.log
+
+/scripts

@@ -5,28 +5,30 @@ echo "Activating virtual environment..."
 uv sync
 source .venv/bin/activate
 
-# Check for required environment variables
-if [ -z "$ASKDOCS_LLM_API_KEY" ]; then
-    echo "Error: ASKDOCS_LLM_API_KEY environment variable is not set"
-    echo "Please set ASKDOCS_LLM_API_KEY before running the application"
-    exit 1
-fi
-
+# Determine which environment file to use
 if [ -z "$ENV_FOR_DYNACONF" ]; then
-    echo "Error: ENV_FOR_DYNACONF environment variable is not set"
-    echo "Please set ENV_FOR_DYNACONF (e.g., 'dev' or 'prod') before running the application"
-    exit 1
+    # ENV_FOR_DYNACONF not set, default to development
+    ENV_FOR_DYNACONF="development"
+    ENV_FILE=".env.dev"
+else
+    # ENV_FOR_DYNACONF set to something (e.g., production)
+    ENV_FILE=".env.prod"
 fi
 
-if [ -z "$ASKDOCS_DB_PASSWORD" ]; then
-    echo "Error: ASKDOCS_DB_PASSWORD environment variable is not set"
-    echo "Please set ASKDOCS_DB_PASSWORD before running the application"
-    exit 1
+echo "Using ENV_FOR_DYNACONF=$ENV_FOR_DYNACONF"
+echo "Loading environment variables from $ENV_FILE"
+
+# Load environment variables from the selected file
+if [ -f "$ENV_FILE" ]; then
+    export $(grep -v '^#' "$ENV_FILE" | xargs)
+else
+    echo "Warning: $ENV_FILE not found, skipping"
 fi
+
 
 # Pull values from env variables or hardcoded config
-HOST=$(python -c "from app.core.settings import settings; print(settings.fastapi.host)")
-PORT=$(python -c "from app.core.settings import settings; print(settings.fastapi.port)")
+HOST=$(python3 -c "from app.core.settings import settings; print(settings.fastapi.host)")
+PORT=$(python3 -c "from app.core.settings import settings; print(settings.fastapi.port)")
 
 # Start backend server in background
 echo "Starting backend server on $HOST:$PORT..."

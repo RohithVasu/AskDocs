@@ -36,8 +36,7 @@ production:
 
   qdrant:
     url: 'http://askdocs-qdrant:6333'
-    embed_model: 'all-MiniLM-L6-v2'
-    search_limit: 10
+    search_limit: 5
     scroll_limit: 10
 
   redis:
@@ -53,7 +52,6 @@ production:
 
   data:
     documents_dir: './data/documents'
-    # vector_store_dir: './data/vector_store'
-    # supported_file_types: ['.docx', '.csv', '.pdf', '.pptx', '.ppt', '.txt', '.md']
+    supported_file_types: ['docx', 'pdf', 'pptx', 'jpg', 'jpeg', 'png']
     chunk_size: 1000
     chunk_overlap: 200

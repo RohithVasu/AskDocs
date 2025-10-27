@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from sqlmodel import Session
 
 from app.core.settings import settings
-import app.models
 
 
 # Update your PostgreSQL connection details

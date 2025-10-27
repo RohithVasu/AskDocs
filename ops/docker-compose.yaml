@@ -11,7 +11,7 @@ services:
     environment:
       ENV_FOR_DYNACONF: production
     env_file:
-      - ../.env
+      - ../.env.prod
     depends_on:
       - postgres
       - qdrant
@@ -22,7 +22,7 @@ services:
       - ../data/documents:/app/data/documents
 
   postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: askdocs-postgres
     restart: always
     environment:
@@ -89,7 +89,7 @@ services:
     environment:
       ENV_FOR_DYNACONF: production
     env_file: 
-      - ../.env
+      - ../.env.prod
     deploy:
       replicas: 1
     volumes:

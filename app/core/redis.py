@@ -6,4 +6,4 @@ from app.core.settings import settings
 redis_conn = Redis(host=settings.redis.host, port=settings.redis.port)
 
 # Create queue
-task_queue = Queue("task_queue", connection=redis_conn)
+queue = Queue(connection=redis_conn)
