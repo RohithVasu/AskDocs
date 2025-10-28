@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import time
 
-from app.routes.auth import get_current_user
+from app.dependencies.auth import get_current_user
 from app.services.chat_service import Chat
 from app.routes import AppResponse
 from app.model_handlers.chat_message_handler import (

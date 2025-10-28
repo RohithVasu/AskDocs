@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import Optional
+from uuid import UUID
 
 from app.core.settings import settings
 from app.core.qdrant import get_qdrant_client
@@ -26,7 +27,7 @@ class DocumentProcessor:
         # Create required directories
         os.makedirs(settings.data.documents_dir, exist_ok=True)
 
-    def process_document(self, file_path: str, user_id: str, folder_id: Optional[str] = None):
+    def process_document(self, file_path: str, user_id: str, folder_id: Optional[UUID] = None):
         """Process a document and return its text chunks."""
 
         logger.info(f"Processing document: {file_path} for user: {user_id}")

@@ -4,7 +4,7 @@ from rq import Retry
 
 from app.model_handlers.document_handler import DocumentHandler
 from app.model_handlers.folder_handler import FolderHandler, FolderCreate, FolderUpdate
-from app.routes.auth import get_current_user
+from app.dependencies.auth import get_current_user
 from app.core.db import get_global_db_session
 from app.routes import AppResponse
 from app.model_handlers.user_handler import UserResponse

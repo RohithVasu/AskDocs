@@ -17,7 +17,7 @@ from app.model_handlers.chat_message_handler import (
     ChatMessageResponse
 )
 from app.routes import AppResponse
-from app.routes.auth import get_current_user
+from app.dependencies.auth import get_current_user
 from app.model_handlers.user_handler import UserResponse
 
 session_router = APIRouter(prefix="/sessions", tags=["session"])

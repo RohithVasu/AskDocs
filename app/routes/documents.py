@@ -6,9 +6,10 @@ from rq import Retry
 import os
 from typing import List, Optional
 import aiofiles
+from uuid import UUID
 
 from app.routes import AppResponse
-from app.routes.auth import get_current_user
+from app.dependencies.auth import get_current_user
 from app.services.document_processor import DocumentProcessor
 from app.core.settings import settings
 from app.core.qdrant import get_qdrant_client
@@ -19,7 +20,7 @@ from app.core.redis import queue
 
 document_router = APIRouter(prefix="/documents", tags=["documents"])
 
-def process_document_task(file_path: str, user_id: str, folder_id: Optional[str] = None):
+def process_document_task(file_path: str, user_id: str, folder_id: Optional[UUID] = None):
     processor = DocumentProcessor()
     return processor.process_document(file_path, user_id, folder_id)
 
@@ -31,7 +32,7 @@ def delete_document_task(doc_name: str, collection_name: str):
 @document_router.post("/", response_model=AppResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     files: List[UploadFile] = File(...),
-    folder_id: Optional[str] = Form(None),
+    folder_id: Optional[UUID] = Form(None),
     current_user: UserResponse = Depends(get_current_user)
 ):
     """
