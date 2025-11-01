@@ -1,6 +1,6 @@
-from typing import List
+from typing import Dict, Any
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.db import get_global_db_session
 from app.model_handlers.chat_session_documents_handler import (
@@ -20,7 +20,7 @@ from app.routes import AppResponse
 from app.dependencies.auth import get_current_user
 from app.model_handlers.user_handler import UserResponse
 
-session_router = APIRouter(prefix="/sessions", tags=["session"])
+session_router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 @session_router.post("/", response_model=AppResponse)
 def create_session(
@@ -47,7 +47,7 @@ def list_sessions(
     return AppResponse(
         status="success",
         message="Chat sessions fetched successfully",
-        data={"data": ChatSessionHandler(db).get_by_user(current_user.id)}
+        data=ChatSessionHandler(db).get_by_user(current_user.id)
     )
 
 
@@ -59,7 +59,7 @@ def get_session(
     return AppResponse(
         status="success",
         message="Chat session fetched successfully",
-        data={"data": ChatSessionHandler(db).read(session_id)}
+        data=ChatSessionHandler(db).read(session_id)
     )
 
 
@@ -72,7 +72,7 @@ def update_session(
     return AppResponse(
         status="success",
         message="Chat session updated successfully",
-        data={"data": ChatSessionHandler(db).update(session_id, ChatSessionUpdate(name=name))}
+        data=ChatSessionHandler(db).update(session_id, ChatSessionUpdate(name=name))
     )
 
 
@@ -84,7 +84,7 @@ def delete_session(
     return AppResponse(
         status="success",
         message="Chat session deleted successfully",
-        data={"data": ChatSessionHandler(db).delete(session_id)}
+        data=ChatSessionHandler(db).delete(session_id)
     )
 
 @session_router.post("/add_documents", response_model=AppResponse)
@@ -97,7 +97,7 @@ def add_documents_to_session(
     return AppResponse(
         status="success",
         message="Documents added to session successfully",
-        data={"data": ChatSessionDocumentHandler(db).create(obj_in)}
+        data=ChatSessionDocumentHandler(db).create(obj_in)
     )
 
 
@@ -110,7 +110,7 @@ def list_session_documents(
     return AppResponse(
         status="success",
         message="Documents fetched successfully",
-        data={"data": ChatSessionDocumentHandler(db).get_by_session(session_id)}
+        data=ChatSessionDocumentHandler(db).get_by_session(session_id)
     )
 
 
@@ -131,10 +131,26 @@ def remove_document_from_session(
     return AppResponse(
         status="success",
         message="Document removed from session successfully",
-        data={"data": handler.delete(record.id)}
+        data=handler.delete(record.id)
     )
 
-@session_router.get("/{session_id}/messages", response_model=List[ChatMessageResponse])
-def list_messages(session_id: str, db: Session = Depends(get_global_db_session)):
-    """Get all messages in a session."""
-    return ChatMessageHandler(db).get_by_session(session_id)
+@session_router.get("/{session_id}/messages")
+def list_messages(
+    session_id: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_global_db_session)
+) -> Dict[str, Any]:
+    """Get paginated messages for a session."""
+    handler = ChatMessageHandler(db)
+    data, total = handler.get_paginated(session_id, page, page_size)
+
+    return {
+        "data": data,
+        "meta": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "has_next_page": (page * page_size) < total
+        }
+    }

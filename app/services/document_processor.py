@@ -1,14 +1,11 @@
 from loguru import logger
 import os
-from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from typing import Optional
-from uuid import UUID
 
 from app.core.settings import settings
 from app.core.qdrant import get_qdrant_client
 from app.services.document_loader import UniversalDocumentLoader
-from app.model_handlers.document_handler import DocumentHandler, DocumentCreate
+from app.model_handlers.document_handler import DocumentHandler, DocumentUpdate
 from app.core.db import get_global_db_session
 
 class DocumentProcessor:
@@ -27,7 +24,7 @@ class DocumentProcessor:
         # Create required directories
         os.makedirs(settings.data.documents_dir, exist_ok=True)
 
-    def process_document(self, file_path: str, user_id: str, folder_id: Optional[UUID] = None):
+    def process_document(self, file_path: str, user_id: str, document_id: str):
         """Process a document and return its text chunks."""
 
         logger.info(f"Processing document: {file_path} for user: {user_id}")
@@ -51,14 +48,14 @@ class DocumentProcessor:
                 )
 
                 # Create document record
-                document_handler.create(DocumentCreate(
-                    user_id=str(user_id),
-                    folder_id=str(folder_id),
-                    filename=Path(file_path).name,
-                    file_path=file_path,
-                    vector_collection=str(collection_name)
+                document_handler.update(document_id, DocumentUpdate(
+                    status="completed"
                 ))
                 
             except Exception as e:
                 logger.error(f"Error processing document {file_path}: {str(e)}")
+                document_handler.update(document_id, DocumentUpdate(
+                    status="failed",
+                    error_message=str(e)
+                ))
                 raise

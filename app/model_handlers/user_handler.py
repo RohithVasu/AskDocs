@@ -19,6 +19,7 @@ class UserUpdate(BaseModel):
     email: Optional[str] = Field(None, description="User's email address")
     firstname: Optional[str] = Field(None, description="User's firstname")
     lastname: Optional[str] = Field(None, description="User's lastname")
+    password: Optional[str] = Field(None, description="User's password")
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

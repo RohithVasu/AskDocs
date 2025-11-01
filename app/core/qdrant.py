@@ -107,6 +107,10 @@ class Qdrant:
 
         logger.info(f"Deletion response: {response}")
 
+    def delete_collection(self, collection_name: str):
+        """Delete collection from Qdrant"""
+        self.client.delete_collection(collection_name=collection_name)
+
     def search(
         self,
         query: str,

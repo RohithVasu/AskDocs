@@ -20,7 +20,9 @@ class AuthService:
 
     def login(self, email: str, password: str):
         user = self.user_handler.get_by_email(email, with_password=True)
-        if not user or not verify_password(password, user.password):
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        if not verify_password(password, user.password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         return {
             "access_token": create_access_token({"sub": user.email}),

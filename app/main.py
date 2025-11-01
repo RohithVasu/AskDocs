@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.auth import auth_router
 from app.routes.chat import chat_router
 from app.routes.documents import document_router
-from app.routes.folders import folder_router
 from app.routes.users import user_router
 from app.routes.sessions import session_router
 from app.dependencies.auth import get_current_user
@@ -29,8 +28,7 @@ app.add_middleware(
 
 # Register routers
 app.include_router(auth_router)
-app.include_router(document_router, dependencies=[Depends(get_current_user)])
-app.include_router(folder_router, dependencies=[Depends(get_current_user)])
-app.include_router(chat_router, dependencies=[Depends(get_current_user)])
-app.include_router(session_router, dependencies=[Depends(get_current_user)])
 app.include_router(user_router, dependencies=[Depends(get_current_user)])
+app.include_router(document_router, dependencies=[Depends(get_current_user)])
+app.include_router(session_router, dependencies=[Depends(get_current_user)])
+app.include_router(chat_router, dependencies=[Depends(get_current_user)])

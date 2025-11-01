@@ -1,42 +1,42 @@
 from loguru import logger
 from datetime import datetime
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from rq import Retry
 import os
-from typing import List, Optional
+from typing import List
 import aiofiles
-from uuid import UUID
 
 from app.routes import AppResponse
 from app.dependencies.auth import get_current_user
 from app.services.document_processor import DocumentProcessor
 from app.core.settings import settings
 from app.core.qdrant import get_qdrant_client
-from app.model_handlers.document_handler import DocumentHandler, DocumentUpdate
+from app.model_handlers.document_handler import DocumentCreate, DocumentHandler, DocumentUpdate
 from app.model_handlers.user_handler import UserResponse
 from app.core.db import get_global_db_session
 from app.core.redis import queue
 
 document_router = APIRouter(prefix="/documents", tags=["documents"])
 
-def process_document_task(file_path: str, user_id: str, folder_id: Optional[UUID] = None):
+def process_document_task(file_path: str, user_id: str, document_id: str):
     processor = DocumentProcessor()
-    return processor.process_document(file_path, user_id, folder_id)
+    return processor.process_document(file_path, user_id, document_id)
 
 def delete_document_task(doc_name: str, collection_name: str):
     qdrant_client = get_qdrant_client()
     return qdrant_client.delete_document(doc_name, collection_name)
 
 
-@document_router.post("/", response_model=AppResponse, status_code=status.HTTP_201_CREATED)
+@document_router.post("/", response_model=AppResponse)
 async def upload_document(
     files: List[UploadFile] = File(...),
-    folder_id: Optional[UUID] = Form(None),
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user),
+    db: Session = Depends(get_global_db_session)
 ):
     """
-    Upload one or more documents (supports folders).
+    Upload one or more documents.
     Unsupported formats are skipped.
     Files are queued for background processing.
     """
@@ -46,6 +46,8 @@ async def upload_document(
     start_time = datetime.now()
     user_dir = os.path.join(settings.data.documents_dir, str(current_user.id))
     os.makedirs(user_dir, exist_ok=True)
+
+    document_handler = DocumentHandler(db)
 
     for file in files:
         try:
@@ -61,18 +63,38 @@ async def upload_document(
                 while chunk := await file.read(1024 * 1024):
                     await buffer.write(chunk)
 
+            # Attempt to create document record
+            try:
+                document = document_handler.create(DocumentCreate(
+                    user_id=str(current_user.id),
+                    filename=file.filename,
+                    file_path=file_path,
+                    vector_collection=str(current_user.id),
+                    status="processing",
+                ))
+            except IntegrityError as e:
+                db.rollback()  # rollback the session
+                if "unique_filename_per_user" in str(e.orig):
+                    logger.warning(f"Duplicate document upload: {file.filename}")
+                    return AppResponse(
+                        status="error",
+                        message="A document with same name already exists for this user.",
+                        data={"filename": file.filename},
+                    )
+                raise  # re-raise other DB errors
 
             # Enqueue background job
             document_job = queue.enqueue(
                 process_document_task,
-                args=(file_path, current_user.id, folder_id),
+                args=(file_path, current_user.id, document.id),
                 retry=Retry(max=3, interval=[10, 30, 60])
             )
+
+            document_handler.update(document.id, DocumentUpdate(job_id=document_job.id))
 
             processed_jobs.append({
                 "file": file.filename,
                 "job_id": document_job.id,
-                "folder_id": str(folder_id) if folder_id else None
             })
 
         except Exception as e:
@@ -171,21 +193,3 @@ async def delete_document(
 
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Document not found: {str(e)}")
-
-
-@document_router.get("/folder/{folder_id}", response_model=AppResponse)
-async def get_documents_by_folder(
-    folder_id: str,
-    db: Session = Depends(get_global_db_session)
-):
-    """Get all documents in a folder."""
-    try:
-        document_handler = DocumentHandler(db)
-        documents = document_handler.get_by_folder(folder_id)
-        return AppResponse(
-            status="success",
-            message="Documents fetched successfully",
-            data=documents
-        )
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Folder not found: {str(e)}")
