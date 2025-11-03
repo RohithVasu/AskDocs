@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: ..
+      context: ../backend
       dockerfile: ops/Dockerfile
     image: askdocs/backend:latest
     container_name: askdocs-backend
@@ -11,7 +11,7 @@ services:
     environment:
       ENV_FOR_DYNACONF: production
     env_file:
-      - ../.env.prod
+      - ../backend/.env.prod
     depends_on:
       - postgres
       - qdrant
@@ -19,7 +19,24 @@ services:
     networks:
       - askdocs-network
     volumes:
-      - ../data/documents:/app/data/documents
+      - ../backend/data/documents:/app/data/documents
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ops/Dockerfile
+    image: askdocs/frontend:latest
+    container_name: askdocs-frontend
+    ports:
+      - "8001:8001"
+    restart: always
+    env_file:
+      - ../frontend/.env
+    depends_on:
+      - backend
+    networks:
+      - askdocs-network
+
 
   postgres:
     image: postgres:17
@@ -75,9 +92,6 @@ services:
       - askdocs-network
 
   redis-worker:
-    build:
-      context: ..
-      dockerfile: ops/Dockerfile
     image: askdocs/backend:latest
     container_name: askdocs-worker
     command: bash -c "source .venv/bin/activate && rq worker -u redis://redis:6379 default"
@@ -89,11 +103,11 @@ services:
     environment:
       ENV_FOR_DYNACONF: production
     env_file: 
-      - ../.env.prod
+      - ../backend/.env.prod
     deploy:
       replicas: 1
     volumes:
-      - ../data/documents:/app/data/documents
+      - ../backend/data/documents:/app/data/documents
 
 volumes:
   postgres_data:

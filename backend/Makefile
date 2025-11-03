@@ -1,9 +1,9 @@
 # Docker Compose file
 COMPOSE_FILE = ops/docker-compose.yaml
-PROJECT_NAME = askdocs
+PROJECT_NAME=askdocs
 
 # Base Compose command
-DC = docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
+DC=docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
 
 # Build the images (no start)
 build:
@@ -17,18 +17,18 @@ build-nc:
 up:
 	$(DC) up -d
 
-# Build and start full production stack (backend + frontend + dependencies)
-up-prod-build:
+# Start services and rebuild if needed
+up-build:
 	$(DC) up --build -d
 	docker image prune -f
 
-# Start full production stack (backend + frontend + dependencies)
-up-prod:
-	$(DC) up -d
-
-# Start only dependencies (database, redis, etc.)
+# Start dependencies only
 up-deps:
 	$(DC) up -d postgres pgadmin qdrant redis redis-worker
+
+# Start backend only
+up-backend:
+	$(DC) up -d backend
 
 # Stop services (but keep containers, volumes, and network)
 stop:
@@ -38,16 +38,16 @@ stop:
 restart-app:
 	$(MAKE) down
 	docker rmi $(PROJECT_NAME)/backend || true
-	docker rmi $(PROJECT_NAME)/frontend || true
-	$(DC) build
+	$(DC) build backend
 	$(MAKE) up
 
-# Restart dependencies only
+# Restart dependencies
 restart-deps:
 	$(MAKE) down
 	docker rmi $(PROJECT_NAME)/backend || true
 	$(DC) build backend
 	$(DC) up -d postgres pgadmin qdrant redis redis-worker
+
 
 # Bring everything down (containers, networks)
 down:
@@ -61,6 +61,6 @@ nuke:
 logs:
 	$(DC) logs -f
 
-# Show container status
+# Show status
 ps:
 	$(DC) ps
