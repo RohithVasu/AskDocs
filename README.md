@@ -1,4 +1,4 @@
-# 🧠 AskDocs
+# AskDocs
 
 **AskDocs** is an intelligent AI-powered document assistant that allows users to **upload, search, and chat** with their documents — including **PDF**, **DOCX**, and **PPT** files.  
 It combines **semantic search**, **vector databases**, and **large language models** to make static documents interactive and insightful.
