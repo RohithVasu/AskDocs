@@ -87,7 +87,7 @@ async def upload_document(
             document_job = queue.enqueue(
                 process_document_task,
                 args=(file_path, current_user.id, document.id),
-                retry=Retry(max=3, interval=[10, 30, 60])
+                retry=Retry(max=3, interval=[10, 30, 60]),
             )
 
             document_handler.update(document.id, DocumentUpdate(job_id=document_job.id))

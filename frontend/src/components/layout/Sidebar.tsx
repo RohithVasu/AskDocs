@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "next-themes";
 
 // Icons
 import {
@@ -71,12 +72,12 @@ export const Sidebar = () => {
   const location = useLocation();
   const { user, fetchUser, logout } = useAuthStore();
   const { sessions, setSessions } = useChatStore();
+  const { theme, setTheme } = useTheme();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [newChatName, setNewChatName] = useState("");
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [renameData, setRenameData] = useState({ id: "", name: "" });
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
@@ -263,9 +264,7 @@ export const Sidebar = () => {
   };
 
   const toggleTheme = () => {
-    const next = theme === "light" ? "dark" : "light";
-    document.documentElement.classList.toggle("dark", next === "dark");
-    setTheme(next);
+    setTheme(theme === "light" ? "dark" : "light");
   };
 
   const filteredSessions = sessions.filter((s) =>
@@ -415,7 +414,7 @@ export const Sidebar = () => {
                                       className={cn(
                                         "cursor-pointer text-foreground hover:bg-muted transition-colors",
                                         selectedDocs.includes(doc.id) &&
-                                          "bg-primary/10 text-primary"
+                                        "bg-primary/10 text-primary"
                                       )}
                                     >
                                       <Check
@@ -473,11 +472,10 @@ export const Sidebar = () => {
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.15 }}
-                  className={`group flex items-center justify-between rounded-md ${
-                    location.pathname.includes(session.id)
+                  className={`group flex items-center justify-between rounded-md ${location.pathname.includes(session.id)
                       ? "bg-secondary"
                       : "hover:bg-muted"
-                  } transition`}
+                    } transition`}
                 >
                   <button
                     onClick={() => navigate(`/dashboard/chat/${session.id}`)}

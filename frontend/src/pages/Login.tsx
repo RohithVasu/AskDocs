@@ -81,8 +81,8 @@ export default function Login() {
     } catch (error: any) {
       toast.error(
         error.response?.data?.detail ||
-          error.response?.data?.message ||
-          'Login failed'
+        error.response?.data?.message ||
+        'Login failed'
       );
     } finally {
       setIsLoading(false);
@@ -94,12 +94,11 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <Logo className="scale-125" />
+            <Link to="/" className="hover:opacity-80 transition-opacity">
+              <Logo className="scale-125" />
+            </Link>
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -143,9 +142,9 @@ export default function Login() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
-            Don’t have an account?{' '}
+            Don't have an account?{' '}
             <Link
               to="/register"
               className="text-primary hover:underline font-medium"
@@ -153,6 +152,12 @@ export default function Login() {
               Sign up
             </Link>
           </p>
+          <Link
+            to="/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to Home
+          </Link>
         </CardFooter>
       </Card>
     </div>

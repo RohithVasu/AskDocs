@@ -17,9 +17,9 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 10%;
 
-    --primary: 250 80% 60%;
+    --primary: 210 40% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 250 90% 70%;
+    --primary-glow: 210 50% 65%;
 
     --secondary: 240 5% 96%;
     --secondary-foreground: 240 10% 10%;
@@ -27,7 +27,7 @@ All colors MUST be HSL.
     --muted: 240 5% 96%;
     --muted-foreground: 240 4% 46%;
 
-    --accent: 250 80% 60%;
+    --accent: 210 40% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -35,24 +35,24 @@ All colors MUST be HSL.
 
     --border: 240 6% 90%;
     --input: 240 6% 90%;
-    --ring: 250 80% 60%;
+    --ring: 210 40% 55%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 240 10% 98%;
     --sidebar-foreground: 240 10% 20%;
-    --sidebar-primary: 250 80% 60%;
+    --sidebar-primary: 210 40% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 250 80% 96%;
-    --sidebar-accent-foreground: 250 80% 30%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 210 40% 30%;
     --sidebar-border: 240 6% 92%;
-    --sidebar-ring: 250 80% 60%;
+    --sidebar-ring: 210 40% 55%;
 
     /* AI-specific colors */
-    --ai-gradient-start: 250 80% 60%;
-    --ai-gradient-end: 280 70% 55%;
-    --ai-message-bg: 250 80% 97%;
-    --user-message-bg: 250 80% 60%;
+    --ai-gradient-start: 210 50% 60%;
+    --ai-gradient-end: 200 45% 58%;
+    --ai-message-bg: 210 40% 96%;
+    --user-message-bg: 210 40% 55%;
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -69,9 +69,9 @@ All colors MUST be HSL.
     --popover: 240 8% 12%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 250 80% 60%;
+    --primary: 210 45% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 250 90% 70%;
+    --primary-glow: 210 55% 65%;
 
     --secondary: 240 6% 16%;
     --secondary-foreground: 0 0% 95%;
@@ -79,7 +79,7 @@ All colors MUST be HSL.
     --muted: 240 6% 16%;
     --muted-foreground: 240 5% 64%;
 
-    --accent: 250 80% 60%;
+    --accent: 210 45% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -87,22 +87,22 @@ All colors MUST be HSL.
 
     --border: 240 6% 18%;
     --input: 240 6% 18%;
-    --ring: 250 80% 60%;
+    --ring: 210 45% 55%;
 
     --sidebar-background: 240 10% 10%;
     --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 250 80% 60%;
+    --sidebar-primary: 210 45% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 6% 16%;
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 240 6% 16%;
-    --sidebar-ring: 250 80% 60%;
+    --sidebar-ring: 210 45% 55%;
 
     /* AI-specific colors for dark mode */
-    --ai-gradient-start: 250 80% 60%;
-    --ai-gradient-end: 280 70% 55%;
+    --ai-gradient-start: 210 55% 60%;
+    --ai-gradient-end: 200 50% 58%;
     --ai-message-bg: 240 8% 14%;
-    --user-message-bg: 250 80% 60%;
+    --user-message-bg: 210 45% 55%;
   }
 }
 
@@ -134,5 +134,109 @@ All colors MUST be HSL.
     background: hsl(var(--background) / 0.8);
     backdrop-filter: blur(12px);
     border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  /* Markdown Prose Styles */
+  .markdown-content {
+    @apply text-sm leading-relaxed;
+  }
+
+  .markdown-content p {
+    @apply mb-4 last:mb-0;
+  }
+
+  .markdown-content h1 {
+    @apply text-2xl font-bold mt-6 mb-3 first:mt-0;
+  }
+
+  .markdown-content h2 {
+    @apply text-xl font-semibold mt-5 mb-3 first:mt-0;
+  }
+
+  .markdown-content h3 {
+    @apply text-lg font-semibold mt-4 mb-2 first:mt-0;
+  }
+
+  .markdown-content h4 {
+    @apply text-base font-semibold mt-3 mb-2 first:mt-0;
+  }
+
+  .markdown-content ul {
+    @apply list-disc pl-6 mb-4 space-y-1;
+  }
+
+  .markdown-content ol {
+    @apply list-decimal pl-6 mb-4 space-y-1;
+  }
+
+  .markdown-content li {
+    @apply leading-relaxed;
+  }
+
+  .markdown-content blockquote {
+    @apply border-l-4 border-primary pl-4 italic my-4 text-muted-foreground;
+  }
+
+  .markdown-content code {
+    @apply text-foreground text-sm font-mono border-b border-muted-foreground/20 px-0.5;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .markdown-content pre {
+    @apply my-4 rounded-lg overflow-x-auto bg-transparent border border-border/50;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .markdown-content pre code {
+    @apply bg-transparent p-0 text-sm;
+  }
+
+  .markdown-content table {
+    @apply w-full border-collapse my-4;
+  }
+
+  .markdown-content th {
+    @apply border border-border bg-muted px-3 py-2 text-left font-semibold;
+  }
+
+  .markdown-content td {
+    @apply border border-border px-3 py-2;
+  }
+
+  .markdown-content a {
+    @apply text-primary underline hover:text-primary/80 transition-colors;
+  }
+
+  .markdown-content strong {
+    @apply font-semibold;
+  }
+
+  .markdown-content em {
+    @apply italic;
+  }
+
+  .markdown-content hr {
+    @apply my-6 border-border;
+  }
+
+  /* Typing Cursor Animation */
+  @keyframes blink {
+
+    0%,
+    50% {
+      opacity: 1;
+    }
+
+    51%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .typing-cursor {
+    @apply inline-block ml-0.5 text-current;
+    animation: blink 1s infinite;
   }
 }

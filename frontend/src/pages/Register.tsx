@@ -65,10 +65,11 @@ export default function Register() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <Logo className="scale-125" />
+            <Link to="/" className="hover:opacity-80 transition-opacity">
+              <Logo className="scale-125" />
+            </Link>
           </div>
           <CardTitle className="text-2xl">Create an Account</CardTitle>
-          <CardDescription>Get started with AskDocs today</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -152,13 +153,19 @@ export default function Register() {
           </form>
         </CardContent>
 
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline font-medium">
               Sign in
             </Link>
           </p>
+          <Link
+            to="/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to Home
+          </Link>
         </CardFooter>
       </Card>
     </div>

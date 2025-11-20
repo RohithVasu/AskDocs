@@ -75,6 +75,7 @@ export default function DocumentsPage() {
   const hasFetched = useRef(false);
 
   const [sessionNameError, setSessionNameError] = useState("");
+  const [hasRecentUpload, setHasRecentUpload] = useState(false);
 
   // ----------------------------------------------------
   // Fetch Documents
@@ -126,17 +127,33 @@ export default function DocumentsPage() {
   // Auto Refresh (for "processing" docs)
   // ----------------------------------------------------
   useEffect(() => {
-    const interval = setInterval(() => {
-      const hasProcessing = documents.some(
-        (doc) => doc.status?.toLowerCase() === 'processing'
-      );
+    const hasProcessing = documents.some(
+      (doc) => doc.status?.toLowerCase() === 'processing'
+    );
 
-      // ⚡ Only refresh without resetting to avoid flicker
-      if (hasProcessing && !loading) fetchDocuments();
-    }, 7000); // slightly slower, smoother
+    // Use aggressive polling if we have recent upload or processing docs
+    const shouldPoll = hasProcessing || hasRecentUpload;
+    // Aggressive polling (2s) after upload, slower (7s) for background checks
+    const pollInterval = hasRecentUpload ? 2000 : 7000;
+
+    if (!shouldPoll) {
+      setHasRecentUpload(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (!loading) {
+        fetchDocuments(true); // Reset to refresh status updates
+      }
+    }, pollInterval);
+
+    // Stop aggressive polling if no processing docs found
+    if (!hasProcessing && hasRecentUpload) {
+      setHasRecentUpload(false);
+    }
 
     return () => clearInterval(interval);
-  }, [documents, loading]);
+  }, [documents, loading, hasRecentUpload]);
 
   // ----------------------------------------------------
   // Infinite Scroll
@@ -169,6 +186,11 @@ export default function DocumentsPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success('Document(s) uploaded successfully');
+
+      // Trigger aggressive polling after upload
+      setHasRecentUpload(true);
+
+      // Immediately fetch to show new documents
       fetchDocuments(true);
     } catch (error) {
       toast.error('Failed to upload document(s)');
@@ -270,12 +292,7 @@ export default function DocumentsPage() {
   }, [newSessionName, sessions]);
 
 
-  // ----------------------------------------------------
-  // Lifecycle
-  // ----------------------------------------------------
-  useEffect(() => {
-    fetchDocuments(true);
-  }, []);
+
 
   const filteredDocs = useMemo(
     () =>
@@ -367,8 +384,8 @@ export default function DocumentsPage() {
                   status === 'completed'
                     ? 'text-green-600'
                     : status === 'processing'
-                    ? 'text-yellow-600'
-                    : 'text-red-600';
+                      ? 'text-yellow-600'
+                      : 'text-red-600';
 
                 return (
                   <TableRow
@@ -377,9 +394,8 @@ export default function DocumentsPage() {
                       const isCheckbox = (e.target as HTMLElement).closest('input[type="checkbox"]');
                       if (!isCheckbox) toggleSelect(doc.id);
                     }}
-                    className={`cursor-pointer transition-all duration-150 ${
-                      selectedDocs.includes(doc.id) ? "bg-muted/60" : "hover:bg-muted/20"
-                    }`}
+                    className={`cursor-pointer transition-all duration-150 ${selectedDocs.includes(doc.id) ? "bg-muted/60" : "hover:bg-muted/20"
+                      }`}
                   >
                     <TableCell className="text-center">
                       <input

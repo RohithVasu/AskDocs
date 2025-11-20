@@ -12,7 +12,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Initialize FastAPI app
 app = FastAPI(
-    root_path="/api/v1",
+    root_path="/askdocs-api/v1",
     title="AskDocs API",
     description="Visit http://0.0.0.0:8000/docs for API documentation",
     version="0.0.1"

@@ -106,3 +106,66 @@ class Chat:
         })
 
         return response["answer"]
+
+    def stream_chat_response(self, user_id: str, session_id: str, query: str):
+        """Stream chat response based on question and chat history."""
+
+        # Load chat history or initialize if not present
+        chat_history = self.get_chat_history(session_id)
+
+        document_names = self.get_document_names(session_id)
+
+        if len(document_names) == 0:
+            raise ValueError("No documents found for session")
+
+        vector_store = self.qdrant._get_vector_store(collection_name=user_id)
+
+        # Build filter for a list of documents (sources)
+        filter_condition = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="metadata.source",
+                    match=models.MatchAny(any=document_names)
+                )
+            ]
+        )
+
+        retriever = vector_store.as_retriever(
+            search_kwargs={
+                "k": settings.qdrant.search_limit,
+                "filter": filter_condition,
+            }
+        )
+        
+        contextualize_q_prompt  = ChatPromptTemplate.from_messages(
+            [
+                ("system", settings.llm.retriever_prompt),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", "{input}"),
+            ]
+        )
+        
+        history_aware_retriever = create_history_aware_retriever(
+            self.chat_model,
+            retriever,
+            contextualize_q_prompt
+        )
+
+        qa_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", settings.llm.system_prompt),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ]
+        )
+
+        question_answer_chain = create_stuff_documents_chain(self.chat_model, qa_prompt)
+        
+        rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+        for chunk in rag_chain.stream({
+            "chat_history": chat_history,
+            "input": query
+        }):
+            if "answer" in chunk:
+                yield chunk["answer"]

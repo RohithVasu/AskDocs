@@ -1,4 +1,5 @@
 from fastapi import Depends, APIRouter
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import time
@@ -21,37 +22,38 @@ class ChatRequest(BaseModel):
     query: str
 
 
-@chat_router.post("/", response_model=AppResponse)
-def chat(
+@chat_router.post("/")
+async def chat(
     request: ChatRequest,
     db: Session = Depends(get_global_db_session),
     current_user: UserResponse = Depends(get_current_user),
 ):
     """Send a message and get AI response."""
 
-    start_time = time.time()
-
     user_id = current_user.id
     session_id = request.session_id
     query = request.query
 
-    response = Chat().get_chat_response(
-        user_id=user_id,
-        session_id=session_id,
-        query=query,
-    )
+    async def generate_response():
+        full_response = ""
+        try:
+            for chunk in Chat().stream_chat_response(
+                user_id=user_id,
+                session_id=session_id,
+                query=query,
+            ):
+                full_response += chunk
+                yield chunk
+            
+            # Save message after streaming
+            chat_message = ChatMessageCreate(
+                session_id=session_id,
+                query=query,
+                response=full_response
+            )
+            ChatMessageHandler(db).create(chat_message)
+            
+        except Exception as e:
+            yield f"Error: {str(e)}"
 
-    chat_message = ChatMessageCreate(
-        session_id=request.session_id,
-        query=request.query,
-        response=response
-    )
-    ChatMessageHandler(db).create(chat_message)
-    
-    end_time = time.time()
-    
-    return AppResponse(
-        status="success",
-        message="Response received successfully",
-        data={"time": end_time - start_time, "query": request.query, "response": response}
-    )
+    return StreamingResponse(generate_response(), media_type="text/plain")

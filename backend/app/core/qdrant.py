@@ -71,12 +71,16 @@ class Qdrant:
 
         documents = []
         for chunk in text_chunks:
+            # Merge existing metadata with new metadata
+            doc_metadata = chunk.metadata.copy()
+            doc_metadata.update({
+                "source": Path(file_path).name,
+                "user_id": collection_name,
+            })
+            
             document = Document(
                 page_content=chunk.page_content,
-                metadata={
-                    "source": Path(file_path).name,
-                    "user_id": collection_name,
-                }
+                metadata=doc_metadata
             )
             documents.append(document)
 

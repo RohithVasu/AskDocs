@@ -92,6 +92,9 @@ services:
       - askdocs-network
 
   redis-worker:
+    build:
+      context: ../backend
+      dockerfile: ops/Dockerfile
     image: askdocs/backend:latest
     container_name: askdocs-worker
     command: bash -c "source .venv/bin/activate && rq worker -u redis://redis:6379 default"

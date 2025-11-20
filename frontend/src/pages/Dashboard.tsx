@@ -355,8 +355,8 @@ export default function Dashboard() {
               <Button
                 onClick={handleCreateSession}
                 disabled={
-                  !newChatName.trim() || 
-                  selectedDocs.length === 0 || 
+                  !newChatName.trim() ||
+                  selectedDocs.length === 0 ||
                   !!errorMessage
                 }
                 className="w-full"
@@ -368,84 +368,7 @@ export default function Dashboard() {
         </Sheet>
 
 
-        {/* Recent Activity */}
-        {hasActivity && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full"
-          >
-            {/* Recent Chats */}
-            <Card className="hover:shadow-md transition cursor-pointer relative">
-              <CardHeader className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                  Recent Chats
-                </CardTitle>
-                <button
-                  onClick={() => navigate("/dashboard/chat")}
-                  className="text-xs text-primary hover:underline"
-                >
-                  View All
-                </button>
-              </CardHeader>
-              <CardContent>
-                {sessions.length > 0 ? (
-                  <ul className="space-y-2">
-                    {sessions.slice(0, 3).map((chat) => (
-                      <li
-                        key={chat.id}
-                        onClick={() => navigate(`/dashboard/chat/${chat.id}`)}
-                        className="text-sm p-2 rounded-md hover:bg-muted cursor-pointer transition truncate"
-                      >
-                        {chat.name || "Untitled Chat"}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No recent chats yet.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Recent Documents */}
-            <Card className="hover:shadow-md transition cursor-pointer relative">
-              <CardHeader className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                  <FolderOpen className="h-5 w-5 text-primary" />
-                  Recent Documents
-                </CardTitle>
-                <button
-                  onClick={() => navigate("/dashboard/documents")}
-                  className="text-xs text-primary hover:underline"
-                >
-                  View All
-                </button>
-              </CardHeader>
-              <CardContent>
-                {recentDocs.length > 0 ? (
-                  <ul className="space-y-2">
-                    {recentDocs.slice(0, 3).map((doc) => (
-                      <li
-                        key={doc.id}
-                        className="text-sm p-2 rounded-md hover:bg-muted transition truncate"
-                      >
-                        {doc.filename || "Untitled Document"}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No documents uploaded yet.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
       </div>
     </div>
   );

@@ -427,7 +427,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { User, Bot, Send, Loader2, ArrowDownCircle } from "lucide-react";
+import { User, Bot, Send, Loader2, ArrowDownCircle, Square } from "lucide-react";
 import { useChatStore } from "@/stores/chatStore";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -609,13 +609,24 @@ export default function Chat(): JSX.Element {
     setIsUserNearBottom(nearBottom);
   };
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsSending(false);
+      setIsTyping(false);
+    }
+  };
+
   // -- SEND MESSAGE (user query) --
   const handleSend = async () => {
     if (!sessionId || !input.trim() || isSending) return;
     const text = input.trim();
     setInput("");
     setIsSending(true);
-    setIsTyping(false);
+    setIsTyping(true);
 
     // user message (optimistic)
     const userMsg: Message = {
@@ -630,60 +641,71 @@ export default function Chat(): JSX.Element {
     // Immediately scroll to bottom so user sees their message
     setTimeout(() => scrollToBottomSmooth(), 30);
 
+    // assistant message placeholder
+    const assistantId = (Date.now() + 1).toString();
+    const assistantMsg: Message = {
+      id: assistantId,
+      session_id: sessionId,
+      role: "assistant",
+      content: "",
+      created_at: new Date().toISOString(),
+    };
+    addMessage(assistantMsg);
+
+    abortControllerRef.current = new AbortController();
+
     try {
-      // call backend chat endpoint (returns full assistant text)
-      const resp = await api.post("/chat/", {
-        session_id: sessionId,
-        query: text,
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${import.meta.env.VITE_BASE_API_URL}/chat/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          query: text,
+        }),
+        signal: abortControllerRef.current.signal,
       });
 
-      const fullText: string = resp.data?.data?.response ?? "No response.";
-      // create empty assistant message and start typing it out
-      const assistantId = (Date.now() + 1).toString();
-      const assistantMsg: Message = {
-        id: assistantId,
-        session_id: sessionId,
-        role: "assistant",
-        content: "",
-        created_at: new Date().toISOString(),
-      };
-      addMessage(assistantMsg);
+      if (!response.ok) throw new Error("Failed to send message");
+      if (!response.body) throw new Error("No response body");
 
-      // ✅ Stop showing "Thinking..." now that typing begins
-      setIsSending(false);
-      setIsTyping(true);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
 
-      // Typing simulation
-      setIsTyping(true);
-      let index = 0;
-      const len = fullText.length;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const typer = setInterval(() => {
-        index++;
-        // update message incrementally
-        updateMessage(assistantId, fullText.slice(0, index));
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+        updateMessage(assistantId, fullText);
 
-        // Auto-scroll only if user is near bottom
         if (isUserNearBottom) {
-          // smooth scroll for a nicer effect
           bottomAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
         }
+      }
 
-        if (index >= len) {
-          clearInterval(typer);
-          setIsTyping(false);
-          // refresh sessions (e.g., last-updated list)
-          setTimeout(() => {
-            loadSessions();
-            // ensure final jump to bottom
-            scrollToBottomSmooth();
-          }, 250);
-        }
-      }, TYPING_INTERVAL_MS);
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail ?? "Failed to send message");
+      if (err.name === 'AbortError') {
+        // User stopped the request
+        updateMessage(assistantId, "*Response stopped by user*");
+      } else {
+        // Display user-friendly error message in chat
+        const errorMessage = "I'm sorry, I encountered an error while processing your request. Please try again. If the problem persists, check your internet connection or contact support.";
+        updateMessage(assistantId, errorMessage);
+
+        // Also show a toast for immediate feedback
+        toast.error("Unable to get response. Please try again.");
+      }
     } finally {
       setIsSending(false);
+      setIsTyping(false);
+      abortControllerRef.current = null;
+      loadSessions();
     }
   };
 
@@ -725,10 +747,11 @@ export default function Chat(): JSX.Element {
       children?: React.ReactNode;
     }) => {
       const match = /language-(\w+)/.exec(className || "");
-      if (!inline) {
+      // Only render as code block if it has a language class (i.e., proper markdown code fence)
+      if (!inline && match) {
         return (
           <SyntaxHighlighter
-            language={match ? match[1] : "plaintext"}
+            language={match[1]}
             style={atomOneDark}
             PreTag="div"
             className="rounded-lg text-sm my-2"
@@ -738,10 +761,19 @@ export default function Chat(): JSX.Element {
           </SyntaxHighlighter>
         );
       }
+      // For inline code or code blocks without language, use subtle styling
+      if (!inline) {
+        return (
+          <pre className="bg-transparent border border-border/50 p-3 rounded-lg text-sm my-2 overflow-x-auto whitespace-pre-wrap break-words">
+            <code className="text-foreground font-mono" {...props}>{children}</code>
+          </pre>
+        );
+      }
+      // Inline code - render as normal text without any special styling
       return (
-        <code className="bg-muted text-sm px-1 py-0.5 rounded" {...props}>
+        <span className="text-foreground" {...props}>
           {children}
-        </code>
+        </span>
       );
     },
     p: (props: any) => (
@@ -789,34 +821,48 @@ export default function Chat(): JSX.Element {
               {/* Render messages */}
               {messages.map((m) => {
                 const isUser = m.role === "user";
-                const containerClass = isUser ? "justify-end" : "justify-start";
                 return (
-                  <div key={m.id} className={`flex gap-4 ${containerClass}`}>
-                    {/* Avatar */}
+                  <div key={m.id} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
+                    {/* Avatar for assistant */}
                     {!isUser && (
-                      <div className="ai-gradient p-2 rounded-full h-fit">
-                        <Bot className="h-5 w-5 text-white" />
+                      <div className="flex-shrink-0">
+                        <div className="ai-gradient p-1.5 rounded-full h-fit">
+                          <Bot className="h-4 w-4 text-white" />
+                        </div>
                       </div>
                     )}
 
-                    {/* Message bubble */}
-                    <Card
-                      className={`max-w-[70%] p-4 ${
-                        isUser ? "ai-gradient text-white" : "bg-card"
-                      }`}
+                    {/* Message content */}
+                    <div
+                      className={`max-w-[75%] px-4 py-3 rounded-2xl ${isUser
+                        ? "ai-gradient text-white"
+                        : "bg-muted/50"
+                        }`}
                     >
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
-                        components={markdownComponents as any}
-                      >
-                        {m.content}
-                      </ReactMarkdown>
-                    </Card>
+                      <div className={isUser ? "" : "markdown-content"}>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeHighlight]}
+                          skipHtml={true}
+                          components={markdownComponents as any}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
+                        {/* Show typing cursor if this is the last assistant message and still streaming */}
+                        {!isUser &&
+                          isTyping &&
+                          messages[messages.length - 1]?.id === m.id && (
+                            <span className="typing-cursor">▊</span>
+                          )}
+                      </div>
+                    </div>
 
+                    {/* Avatar for user */}
                     {isUser && (
-                      <div className="bg-primary p-2 rounded-full h-fit">
-                        <User className="h-5 w-5 text-white" />
+                      <div className="flex-shrink-0">
+                        <div className="bg-primary p-1.5 rounded-full h-fit">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -825,16 +871,18 @@ export default function Chat(): JSX.Element {
 
               {/* Typing indicator (if assistant being typed) */}
               {isSending && !isTyping && (
-                <div className="flex gap-4 justify-start">
-                  <div className="ai-gradient p-2 rounded-lg h-fit">
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                <div className="flex gap-3 justify-start">
+                  <div className="flex-shrink-0">
+                    <div className="ai-gradient p-1.5 rounded-full h-fit">
+                      <Loader2 className="h-4 w-4 animate-spin text-white" />
+                    </div>
                   </div>
-                  <Card className="max-w-[70%] p-4">
+                  <div className="max-w-[75%] px-4 py-3 rounded-2xl bg-muted/50">
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-pulse" />
                       <span className="text-sm text-muted-foreground">Thinking...</span>
                     </div>
-                  </Card>
+                  </div>
                 </div>
               )}
 
@@ -857,12 +905,12 @@ export default function Chat(): JSX.Element {
               disabled={isSending}
             />
             <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isSending}
+              onClick={isSending ? handleStop : handleSend}
+              disabled={(!input.trim() && !isSending)}
               className="ai-gradient self-end"
               size="icon"
             >
-              {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              {isSending ? <Square className="h-5 w-5 fill-current" /> : <Send className="h-5 w-5" />}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
